@@ -1,0 +1,181 @@
+---
+title: "Model Selection"
+author: "Maria Freydlin"
+date: "11/28/2020"
+output:
+   html_document:
+    keep_md: true
+    self_contained: no
+    fig_caption: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+
+### This report analyzes mtcars data set looking specifically at how having automatic vs manual transmission affect miles per galon for each car. I will use Stepwise Regression approach to select all the needed features to train the model, meaning that I will train various models with one regressor and move forward with the regressor with the smallest p-value. I will repeat the step until the final model is no longer giving me statistically significant results
+
+First let us visualize how transmission affects the overall mpg. We can see that cars with manual transmission have much higher mpg
+
+```{r transmission}
+library(ggplot2)
+
+g <- ggplot(mtcars, aes(x=factor(am), y=mpg))+
+   geom_boxplot(fill='magenta')+
+   theme_bw()+
+   labs(x='Transmission')+
+   scale_x_discrete(labels=c('Automatic', 'Manual'))
+print(g)
+```
+
+Let's start by fitting a simple model with transmission only converting it to factor. The intercept term is assigned by the model to the cars with automatic transmission (0) and the coefficient of 7.245 is assigned to cars with manual transmission meaning that we would add 7.245 to total mpg for the cars with manual transmission. We get the R-squared score of 0.3385 which is very low so next step would be to find another regressor to train the model with
+
+```{r fitam}
+fit_am <- lm(mpg ~ factor(am), mtcars)
+summary(fit_am)
+```
+
+Let us fit the models with the rest of the regressors individually and pick the one with the lowest p_value. 
+
+```{r fitone}
+fit_am_cyl <- lm(mpg ~ factor(am)+cyl, mtcars)
+fit_am_disp <- lm(mpg ~ factor(am) + disp, mtcars)
+fit_am_hp <- lm(mpg ~ factor(am)+hp, mtcars)
+fit_am_drat <- lm(mpg ~ factor(am)+drat, mtcars)
+fit_am_wt <- lm(mpg ~ factor(am) + wt, mtcars)
+fit_am_qsec <- lm(mpg ~ factor(am) + qsec, mtcars)
+fit_am_vs <- lm(mpg~ factor(am) + factor(vs), mtcars)
+fit_am_gear <- lm(mpg ~ factor(am) + gear, mtcars)
+fit_am_carb <- lm(mpg ~ factor(am) + carb, mtcars)
+
+feature_vec = c('cyl', 'disp', 'hp', 'drat', 'wt', 'qsec', 'vs', 'gear', 'carb')
+one_fit = c(summary(fit_am_cyl)$coef[3,4],
+      summary(fit_am_disp)$coef[3,4],
+      summary(fit_am_hp)$coef[3,4],
+      summary(fit_am_drat)$coef[3,4],
+      summary(fit_am_wt)$coef[3,4],
+      summary(fit_am_qsec)$coef[3,4], 
+      summary(fit_am_vs)$coef[3,4],
+      summary(fit_am_gear)$coef[3,4],
+      summary(fit_am_carb)$coef[3,4])
+
+print(feature_vec[which.min(one_fit)])
+summary(fit_am_hp)
+```
+
+Looks like hp feature has the lowest p-value and the model with am/hp features performed much better with much higher R-squared score. Let us compare the two models by running the Analysis of Variance. Here we see that our two features model adds more significance to the results. 
+
+```{r amhp}
+anova(fit_am, fit_am_hp)
+```
+
+Let's visually explore the hp feature. There appears to be a strong negative correlation between hp and mpg.
+
+```{r hp}
+hp <- ggplot(mtcars, aes(x=hp, y=mpg)) + 
+   geom_point(aes(color=factor(am)))+
+   scale_color_discrete('Transmission', labels=c('Automatic', 'Manual'))+
+   theme_bw()
+print(hp)
+```
+
+Let's move on by repeating the process to select the third feature to train our model. 
+
+```{r fitthree}
+fit_am_hp_cyl <- lm(mpg ~ factor(am)+hp+cyl, mtcars)
+fit_am_hp_dist <- lm(mpg ~ factor(am) +hp+disp, mtcars)
+fit_am_hp_drat <- lm(mpg ~ factor(am)+hp+drat, mtcars)
+fit_am_hp_wt <- lm(mpg ~ factor(am)+hp+wt, mtcars)
+fit_am_hp_qsec <- lm(mpg ~ factor(am)+hp+qsec, mtcars)
+fit_am_hp_vs <- lm(mpg ~ factor(am)+hp+factor(vs), mtcars)
+fit_am_hp_gear <- lm(mpg ~ factor(am)+ hp + gear, mtcars)
+fit_am_hp_carb <- lm(mpg ~ factor(am)+hp+carb, mtcars)
+
+hp_vec = c('cyl', 'dist', 'drat', 'wt', 'qsec', 'vs', 'gear', 'carb')
+hp_fit = c(summary(fit_am_hp_cyl)$coef[4,4],
+           summary(fit_am_hp_dist)$coef[4,4],
+           summary(fit_am_hp_drat)$coef[4,4],
+           summary(fit_am_hp_wt)$coef[4,4],
+           summary(fit_am_hp_qsec)$coef[4,4], 
+           summary(fit_am_hp_vs)$coef[4,4], 
+           summary(fit_am_hp_gear)$coef[4,4], 
+           summary(fit_am_hp_carb)$coef[4,4])
+print(hp_vec[which.min(hp_fit)])
+summary(fit_am_hp_wt)
+```
+
+Our next feature is wt and the model has even better r squared score. Let us compare our three models.
+
+```{r amhpwt}
+anova(fit_am, fit_am_hp, fit_am_hp_wt)
+```
+
+By comparing our three models we see that wt feature added even more significance to the outcomes. Let us explore it visually.  We see that wt has also strong negative correlation with mpg.
+
+```{r wt}
+wt <- ggplot(mtcars, aes(x=wt, y=mpg)) + 
+   geom_point(aes(color=factor(am)))+
+   scale_color_discrete('Transmission', labels=c('Automatic', 'Manual'))+
+   theme_bw()
+print(wt)
+```
+
+Let's move on and see if we need to add another feature to the model
+
+```{r fitfour}
+fit_am_hp_wt_cyl <- lm(mpg ~ factor(am)+hp+wt+cyl, mtcars)
+fit_am_hp_wt_disp <-lm(mpg ~ factor(am)+hp+wt+disp, mtcars)
+fit_am_hp_wt_drat <-lm(mpg ~ factor(am)+hp+wt+drat, mtcars)
+fit_am_hp_wt_qsec <-lm(mpg ~ factor(am)+hp+wt+qsec, mtcars)
+fit_am_hp_wt_vs <-lm(mpg ~ factor(am)+hp+wt+factor(vs), mtcars)
+fit_am_hp_wt_gear <-lm(mpg ~ factor(am)+hp+wt+gear, mtcars)
+fit_am_hp_wt_carb <-lm(mpg ~ factor(am)+hp+wt+carb, mtcars)
+
+wt_vec <- c('cyl', 'disp', 'drat', 'qsec', 'vs', 'gear', 'carb')
+wt_fit <-c(summary(fit_am_hp_wt_cyl)$coef[5,4],
+           summary(fit_am_hp_wt_disp)$coef[5,4],
+           summary(fit_am_hp_wt_drat)$coef[5,4],
+           summary(fit_am_hp_wt_qsec)$coef[5,4],
+           summary(fit_am_hp_wt_vs)$coef[5,4],
+           summary(fit_am_hp_wt_gear)$coef[5,4],
+           summary(fit_am_hp_wt_carb)$coef[5,4])
+print(wt_vec[which.min(wt_fit)])
+
+summary(fit_am_hp_wt_qsec)
+```
+
+This feature turns out to be qsec. Let's compare our four models
+ 
+```{r amhpwtqsec}
+anova(fit_am, fit_am_hp, fit_am_hp_wt, fit_am_hp_wt_qsec)
+```
+
+We see that our four feature model no longer adds significance so we go back to our three feature model, let's look at the residuals plot. It shows that fitted values are not correlated to the residuals which is a good sign.
+
+```{r residuals}
+plot(fit_am_hp_wt, which=1)
+```
+
+To investigate further let us train the model on all the features, setting am and vs as factors.
+
+```{r fitall}
+factor_cols <- c('vs', 'am')
+mtcars[factor_cols] <- lapply(mtcars[factor_cols], factor)
+fit_all <- lm(mpg ~ ., mtcars)
+summary(fit_all)
+```
+
+The all feature model still gets a good score but not of the features seem to be significant which can cause the model to overfit. Let's compare our three feature model to it. By running this analysis we see that using all features does not improve model performance.
+
+```{r threevsall}
+anova(fit_am_hp_wt, fit_all)
+```
+
+In conclusion we will stick with our three feature model of am/hp/wt however we see that transmission is no longer significant in predicting car's mpg. It depends a lot more on the horse power and weight. Our model still has R-squared score of 0.8227 and is less likely to overfit.
+
+```{r conclusion}
+summary(fit_am_hp_wt)
+```

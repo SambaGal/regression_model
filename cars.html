@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Maria Freydlin" />
+
+<meta name="date" content="2020-11-28" />
+
+<title>Model Selection</title>
+
+<script src="cars_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="cars_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="cars_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="cars_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="cars_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="cars_files/navigation-1.1/tabsets.js"></script>
+<link href="cars_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="cars_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Model Selection</h1>
+<h4 class="author">Maria Freydlin</h4>
+<h4 class="date">11/28/2020</h4>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#summary">Summary</a><ul>
+<li><a href="#this-report-analyzes-mtcars-data-set-looking-specifically-at-how-having-automatic-vs-manual-transmission-affect-miles-per-galon-for-each-car.-i-will-use-stepwise-regression-approach-to-select-all-the-needed-features-to-train-the-model-meaning-that-i-will-train-various-models-with-one-regressor-and-move-forward-with-the-regressor-with-the-smallest-p-value.-i-will-repeat-the-step-until-the-final-model-is-no-longer-giving-me-statistically-significant-results">This report analyzes mtcars data set looking specifically at how having automatic vs manual transmission affect miles per galon for each car. I will use Stepwise Regression approach to select all the needed features to train the model, meaning that I will train various models with one regressor and move forward with the regressor with the smallest p-value. I will repeat the step until the final model is no longer giving me statistically significant results</a></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<div id="this-report-analyzes-mtcars-data-set-looking-specifically-at-how-having-automatic-vs-manual-transmission-affect-miles-per-galon-for-each-car.-i-will-use-stepwise-regression-approach-to-select-all-the-needed-features-to-train-the-model-meaning-that-i-will-train-various-models-with-one-regressor-and-move-forward-with-the-regressor-with-the-smallest-p-value.-i-will-repeat-the-step-until-the-final-model-is-no-longer-giving-me-statistically-significant-results" class="section level3">
+<h3>This report analyzes mtcars data set looking specifically at how having automatic vs manual transmission affect miles per galon for each car. I will use Stepwise Regression approach to select all the needed features to train the model, meaning that I will train various models with one regressor and move forward with the regressor with the smallest p-value. I will repeat the step until the final model is no longer giving me statistically significant results</h3>
+<p>First let us visualize how transmission affects the overall mpg. We can see that cars with manual transmission have much higher mpg</p>
+<pre class="r"><code>library(ggplot2)
+
+g &lt;- ggplot(mtcars, aes(x=factor(am), y=mpg))+
+   geom_boxplot(fill=&#39;magenta&#39;)+
+   theme_bw()+
+   labs(x=&#39;Transmission&#39;)+
+   scale_x_discrete(labels=c(&#39;Automatic&#39;, &#39;Manual&#39;))
+print(g)</code></pre>
+<p><img src="cars_files/figure-html/transmission-1.png" /><!-- --></p>
+<p>Let’s start by fitting a simple model with transmission only converting it to factor. The intercept term is assigned by the model to the cars with automatic transmission (0) and the coefficient of 7.245 is assigned to cars with manual transmission meaning that we would add 7.245 to total mpg for the cars with manual transmission. We get the R-squared score of 0.3385 which is very low so next step would be to find another regressor to train the model with</p>
+<pre class="r"><code>fit_am &lt;- lm(mpg ~ factor(am), mtcars)
+summary(fit_am)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ factor(am), data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -9.3923 -3.0923 -0.2974  3.2439  9.5077 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   17.147      1.125  15.247 1.13e-15 ***
+## factor(am)1    7.245      1.764   4.106 0.000285 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 4.902 on 30 degrees of freedom
+## Multiple R-squared:  0.3598, Adjusted R-squared:  0.3385 
+## F-statistic: 16.86 on 1 and 30 DF,  p-value: 0.000285</code></pre>
+<p>Let us fit the models with the rest of the regressors individually and pick the one with the lowest p_value.</p>
+<pre class="r"><code>fit_am_cyl &lt;- lm(mpg ~ factor(am)+cyl, mtcars)
+fit_am_disp &lt;- lm(mpg ~ factor(am) + disp, mtcars)
+fit_am_hp &lt;- lm(mpg ~ factor(am)+hp, mtcars)
+fit_am_drat &lt;- lm(mpg ~ factor(am)+drat, mtcars)
+fit_am_wt &lt;- lm(mpg ~ factor(am) + wt, mtcars)
+fit_am_qsec &lt;- lm(mpg ~ factor(am) + qsec, mtcars)
+fit_am_vs &lt;- lm(mpg~ factor(am) + factor(vs), mtcars)
+fit_am_gear &lt;- lm(mpg ~ factor(am) + gear, mtcars)
+fit_am_carb &lt;- lm(mpg ~ factor(am) + carb, mtcars)
+
+feature_vec = c(&#39;cyl&#39;, &#39;disp&#39;, &#39;hp&#39;, &#39;drat&#39;, &#39;wt&#39;, &#39;qsec&#39;, &#39;vs&#39;, &#39;gear&#39;, &#39;carb&#39;)
+one_fit = c(summary(fit_am_cyl)$coef[3,4],
+      summary(fit_am_disp)$coef[3,4],
+      summary(fit_am_hp)$coef[3,4],
+      summary(fit_am_drat)$coef[3,4],
+      summary(fit_am_wt)$coef[3,4],
+      summary(fit_am_qsec)$coef[3,4], 
+      summary(fit_am_vs)$coef[3,4],
+      summary(fit_am_gear)$coef[3,4],
+      summary(fit_am_carb)$coef[3,4])
+
+print(feature_vec[which.min(one_fit)])</code></pre>
+<pre><code>## [1] &quot;hp&quot;</code></pre>
+<pre class="r"><code>summary(fit_am_hp)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ factor(am) + hp, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.3843 -2.2642  0.1366  1.6968  5.8657 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 26.584914   1.425094  18.655  &lt; 2e-16 ***
+## factor(am)1  5.277085   1.079541   4.888 3.46e-05 ***
+## hp          -0.058888   0.007857  -7.495 2.92e-08 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.909 on 29 degrees of freedom
+## Multiple R-squared:  0.782,  Adjusted R-squared:  0.767 
+## F-statistic: 52.02 on 2 and 29 DF,  p-value: 2.55e-10</code></pre>
+<p>Looks like hp feature has the lowest p-value and the model with am/hp features performed much better with much higher R-squared score. Let us compare the two models by running the Analysis of Variance. Here we see that our two features model adds more significance to the results.</p>
+<pre class="r"><code>anova(fit_am, fit_am_hp)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: mpg ~ factor(am)
+## Model 2: mpg ~ factor(am) + hp
+##   Res.Df    RSS Df Sum of Sq      F   Pr(&gt;F)    
+## 1     30 720.90                                 
+## 2     29 245.44  1    475.46 56.178 2.92e-08 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Let’s visually explore the hp feature. There appears to be a strong negative correlation between hp and mpg.</p>
+<pre class="r"><code>hp &lt;- ggplot(mtcars, aes(x=hp, y=mpg)) + 
+   geom_point(aes(color=factor(am)))+
+   scale_color_discrete(&#39;Transmission&#39;, labels=c(&#39;Automatic&#39;, &#39;Manual&#39;))+
+   theme_bw()
+print(hp)</code></pre>
+<p><img src="cars_files/figure-html/hp-1.png" /><!-- --></p>
+<p>Let’s move on by repeating the process to select the third feature to train our model.</p>
+<pre class="r"><code>fit_am_hp_cyl &lt;- lm(mpg ~ factor(am)+hp+cyl, mtcars)
+fit_am_hp_dist &lt;- lm(mpg ~ factor(am) +hp+disp, mtcars)
+fit_am_hp_drat &lt;- lm(mpg ~ factor(am)+hp+drat, mtcars)
+fit_am_hp_wt &lt;- lm(mpg ~ factor(am)+hp+wt, mtcars)
+fit_am_hp_qsec &lt;- lm(mpg ~ factor(am)+hp+qsec, mtcars)
+fit_am_hp_vs &lt;- lm(mpg ~ factor(am)+hp+factor(vs), mtcars)
+fit_am_hp_gear &lt;- lm(mpg ~ factor(am)+ hp + gear, mtcars)
+fit_am_hp_carb &lt;- lm(mpg ~ factor(am)+hp+carb, mtcars)
+
+hp_vec = c(&#39;cyl&#39;, &#39;dist&#39;, &#39;drat&#39;, &#39;wt&#39;, &#39;qsec&#39;, &#39;vs&#39;, &#39;gear&#39;, &#39;carb&#39;)
+hp_fit = c(summary(fit_am_hp_cyl)$coef[4,4],
+           summary(fit_am_hp_dist)$coef[4,4],
+           summary(fit_am_hp_drat)$coef[4,4],
+           summary(fit_am_hp_wt)$coef[4,4],
+           summary(fit_am_hp_qsec)$coef[4,4], 
+           summary(fit_am_hp_vs)$coef[4,4], 
+           summary(fit_am_hp_gear)$coef[4,4], 
+           summary(fit_am_hp_carb)$coef[4,4])
+print(hp_vec[which.min(hp_fit)])</code></pre>
+<pre><code>## [1] &quot;wt&quot;</code></pre>
+<pre class="r"><code>summary(fit_am_hp_wt)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ factor(am) + hp + wt, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.4221 -1.7924 -0.3788  1.2249  5.5317 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 34.002875   2.642659  12.867 2.82e-13 ***
+## factor(am)1  2.083710   1.376420   1.514 0.141268    
+## hp          -0.037479   0.009605  -3.902 0.000546 ***
+## wt          -2.878575   0.904971  -3.181 0.003574 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.538 on 28 degrees of freedom
+## Multiple R-squared:  0.8399, Adjusted R-squared:  0.8227 
+## F-statistic: 48.96 on 3 and 28 DF,  p-value: 2.908e-11</code></pre>
+<p>Our next feature is wt and the model has even better r squared score. Let us compare our three models.</p>
+<pre class="r"><code>anova(fit_am, fit_am_hp, fit_am_hp_wt)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: mpg ~ factor(am)
+## Model 2: mpg ~ factor(am) + hp
+## Model 3: mpg ~ factor(am) + hp + wt
+##   Res.Df    RSS Df Sum of Sq      F    Pr(&gt;F)    
+## 1     30 720.90                                  
+## 2     29 245.44  1    475.46 73.841 2.445e-09 ***
+## 3     28 180.29  1     65.15 10.118  0.003574 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>By comparing our three models we see that wt feature added even more significance to the outcomes. Let us explore it visually. We see that wt has also strong negative correlation with mpg.</p>
+<pre class="r"><code>wt &lt;- ggplot(mtcars, aes(x=wt, y=mpg)) + 
+   geom_point(aes(color=factor(am)))+
+   scale_color_discrete(&#39;Transmission&#39;, labels=c(&#39;Automatic&#39;, &#39;Manual&#39;))+
+   theme_bw()
+print(wt)</code></pre>
+<p><img src="cars_files/figure-html/wt-1.png" /><!-- --></p>
+<p>Let’s move on and see if we need to add another feature to the model</p>
+<pre class="r"><code>fit_am_hp_wt_cyl &lt;- lm(mpg ~ factor(am)+hp+wt+cyl, mtcars)
+fit_am_hp_wt_disp &lt;-lm(mpg ~ factor(am)+hp+wt+disp, mtcars)
+fit_am_hp_wt_drat &lt;-lm(mpg ~ factor(am)+hp+wt+drat, mtcars)
+fit_am_hp_wt_qsec &lt;-lm(mpg ~ factor(am)+hp+wt+qsec, mtcars)
+fit_am_hp_wt_vs &lt;-lm(mpg ~ factor(am)+hp+wt+factor(vs), mtcars)
+fit_am_hp_wt_gear &lt;-lm(mpg ~ factor(am)+hp+wt+gear, mtcars)
+fit_am_hp_wt_carb &lt;-lm(mpg ~ factor(am)+hp+wt+carb, mtcars)
+
+wt_vec &lt;- c(&#39;cyl&#39;, &#39;disp&#39;, &#39;drat&#39;, &#39;qsec&#39;, &#39;vs&#39;, &#39;gear&#39;, &#39;carb&#39;)
+wt_fit &lt;-c(summary(fit_am_hp_wt_cyl)$coef[5,4],
+           summary(fit_am_hp_wt_disp)$coef[5,4],
+           summary(fit_am_hp_wt_drat)$coef[5,4],
+           summary(fit_am_hp_wt_qsec)$coef[5,4],
+           summary(fit_am_hp_wt_vs)$coef[5,4],
+           summary(fit_am_hp_wt_gear)$coef[5,4],
+           summary(fit_am_hp_wt_carb)$coef[5,4])
+print(wt_vec[which.min(wt_fit)])</code></pre>
+<pre><code>## [1] &quot;qsec&quot;</code></pre>
+<pre class="r"><code>summary(fit_am_hp_wt_qsec)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ factor(am) + hp + wt + qsec, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.4975 -1.5902 -0.1122  1.1795  4.5404 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)   
+## (Intercept) 17.44019    9.31887   1.871  0.07215 . 
+## factor(am)1  2.92550    1.39715   2.094  0.04579 * 
+## hp          -0.01765    0.01415  -1.247  0.22309   
+## wt          -3.23810    0.88990  -3.639  0.00114 **
+## qsec         0.81060    0.43887   1.847  0.07573 . 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.435 on 27 degrees of freedom
+## Multiple R-squared:  0.8579, Adjusted R-squared:  0.8368 
+## F-statistic: 40.74 on 4 and 27 DF,  p-value: 4.589e-11</code></pre>
+<p>This feature turns out to be qsec. Let’s compare our four models</p>
+<pre class="r"><code>anova(fit_am, fit_am_hp, fit_am_hp_wt, fit_am_hp_wt_qsec)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: mpg ~ factor(am)
+## Model 2: mpg ~ factor(am) + hp
+## Model 3: mpg ~ factor(am) + hp + wt
+## Model 4: mpg ~ factor(am) + hp + wt + qsec
+##   Res.Df    RSS Df Sum of Sq       F    Pr(&gt;F)    
+## 1     30 720.90                                   
+## 2     29 245.44  1    475.46 80.2001 1.433e-09 ***
+## 3     28 180.29  1     65.15 10.9892  0.002619 ** 
+## 4     27 160.07  1     20.22  3.4115  0.075731 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>We see that our four feature model no longer adds significance so we go back to our three feature model, let’s look at the residuals plot. It shows that fitted values are not correlated to the residuals which is a good sign.</p>
+<pre class="r"><code>plot(fit_am_hp_wt, which=1)</code></pre>
+<p><img src="cars_files/figure-html/residuals-1.png" /><!-- --></p>
+<p>To investigate further let us train the model on all the features, setting am and vs as factors.</p>
+<pre class="r"><code>factor_cols &lt;- c(&#39;vs&#39;, &#39;am&#39;)
+mtcars[factor_cols] &lt;- lapply(mtcars[factor_cols], factor)
+fit_all &lt;- lm(mpg ~ ., mtcars)
+summary(fit_all)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ ., data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.4506 -1.6044 -0.1196  1.2193  4.6271 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept) 12.30337   18.71788   0.657   0.5181  
+## cyl         -0.11144    1.04502  -0.107   0.9161  
+## disp         0.01334    0.01786   0.747   0.4635  
+## hp          -0.02148    0.02177  -0.987   0.3350  
+## drat         0.78711    1.63537   0.481   0.6353  
+## wt          -3.71530    1.89441  -1.961   0.0633 .
+## qsec         0.82104    0.73084   1.123   0.2739  
+## vs1          0.31776    2.10451   0.151   0.8814  
+## am1          2.52023    2.05665   1.225   0.2340  
+## gear         0.65541    1.49326   0.439   0.6652  
+## carb        -0.19942    0.82875  -0.241   0.8122  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.65 on 21 degrees of freedom
+## Multiple R-squared:  0.869,  Adjusted R-squared:  0.8066 
+## F-statistic: 13.93 on 10 and 21 DF,  p-value: 3.793e-07</code></pre>
+<p>The all feature model still gets a good score but not of the features seem to be significant which can cause the model to overfit. Let’s compare our three feature model to it. By running this analysis we see that using all features does not improve model performance.</p>
+<pre class="r"><code>anova(fit_am_hp_wt, fit_all)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: mpg ~ factor(am) + hp + wt
+## Model 2: mpg ~ cyl + disp + hp + drat + wt + qsec + vs + am + gear + carb
+##   Res.Df    RSS Df Sum of Sq      F Pr(&gt;F)
+## 1     28 180.29                           
+## 2     21 147.49  7    32.797 0.6671 0.6973</code></pre>
+<p>In conclusion we will stick with our three feature model of am/hp/wt however we see that transmission is no longer significant in predicting car’s mpg. It depends a lot more on the horse power and weight. Our model still has R-squared score of 0.8227 and is less likely to overfit.</p>
+<pre class="r"><code>summary(fit_am_hp_wt)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ factor(am) + hp + wt, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.4221 -1.7924 -0.3788  1.2249  5.5317 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 34.002875   2.642659  12.867 2.82e-13 ***
+## factor(am)1  2.083710   1.376420   1.514 0.141268    
+## hp          -0.037479   0.009605  -3.902 0.000546 ***
+## wt          -2.878575   0.904971  -3.181 0.003574 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.538 on 28 degrees of freedom
+## Multiple R-squared:  0.8399, Adjusted R-squared:  0.8227 
+## F-statistic: 48.96 on 3 and 28 DF,  p-value: 2.908e-11</code></pre>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
